@@ -110,11 +110,11 @@ pub fn say(name: &str) {
             <pre>
                 <code>
      <script type="module">
-      import init, {greet} from "./pkg/hello_wasm.js";
+      import init, {say} from "./pkg/hello_wasm.js";
 
       init()
           .then(() => {
-              greet("WebAssembly")
+              say("WebAssembly")
           });
     </script>
 
