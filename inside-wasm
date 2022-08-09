@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Inside Wasm | Shrawan Poudel</title>
+    <meta name="description" content="Inside Wasm">
+    <meta name="author" content="Shrawan Poudel">
+    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/css/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/css/theme/black.min.css"
+          id="theme">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/lib/css/zenburn.min.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- If the query includes 'print-pdf', include the PDF print sheet -->
+    <!--<script>
+        if (window.location.search.match(/print-pdf/gi)) {
+            var link = document.createElement('link');
+
+            link.rel = 'stylesheet';
+            link.type = 'text/css';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/css/print/pdf.min.css';
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+    </script>-->
+
+    <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/lib/js/html5shiv.js"></script>
+    <![endif]-->
+</head>
+<body>
+
+<div class="reveal">
+    <div class="slides">
+        <section>
+            <img src="https://cdn.pythontherightway.com/images/webassembly-logo.webp">
+            <h1>Inside Wasm</h1>
+            <p>- 👨‍💻 Shrawan Poudel </p>
+        </section>
+        <section>
+            <ul>
+                <li> WebAssembly (Wasm)</li>
+                <li>Designed as a portable compilation target for programming languages</li>
+                <li>new type of code that can run on web browsers</li>
+                <li>Low level assembly like language</li>
+                <li>Provides languages such as C/C++ and Rust with compilation target so that they can run on web</li>
+                <li>Designed to run alongside JS</li>
+            </ul>
+        </section>
+        <section>
+            <ul>
+                <li>Provides way to run code written in multiple languages on web at near native speed</li>
+                <li>Can load Wasm modules into JS and share functionality</li>
+            </ul>
+        </section>
+        <section>
+            <h3>Install emscripten</h3>
+            <p>(Emscripten SDK (emsdk))</p>
+            <a href="https://emscripten.org/docs/getting_started/downloads.html">https://emscripten.org/docs/getting_started/downloads.html</a>
+        </section>
+        <section>
+            <h4> compile a C source file</h4>
+            <pre>
+                <code>
+// c file main.c
+#include &lt;stdio.h&gt;
+
+int main() {
+     printf("Hello, World!\n");
+     return 0;
+}
+                </code>
+            </pre>
+            <pre>
+                emcc main.c -o main.html
+            </pre>
+
+        </section>
+        <section>
+            <h3> with Rust</h3>
+            <pre>
+                <code>
+                    cargo install wasm-pack
+                    cargo new --lib hello-wasm
+                </code>
+            </pre>
+        </section>
+        <section>
+            <pre><code>
+// src/lib.rs
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+extern {
+    pub fn alert(s: &str);
+}
+
+#[wasm_bindgen]
+pub fn say(name: &str) {
+    alert(&format!("Hello, {}!", name));
+}
+            </code></pre>
+            <pre>Using wasm-bindgen to communicate between Rust and JavaScript</pre>
+            <pre> Build syntax: wasm-pack build --target web </pre>
+        </section>
+
+        <section>
+            <h3>Using package on web</h3>
+            <pre>
+                <code>
+     <script type="module">
+      import init, {greet} from "./pkg/hello_wasm.js";
+
+      init()
+          .then(() => {
+              greet("WebAssembly")
+          });
+    </script>
+
+                </code>
+            </pre>
+        </section>
+
+        <section>
+            <h3>Adding some more funcs</h3>
+            <pre>
+                <code>
+#[wasm_bindgen]
+pub fn add(a: i32, b: i32) -> i32 {
+    return a + b;
+}
+                </code>
+            </pre>
+        </section>
+        <section>
+            <pre>
+                <code>
+<script type="module">
+import init, {say, add} from "./pkg/hello_wasm.js";
+
+init()
+        .then(() => {
+            say("WebAssembly")
+            let s = add(1, 5)
+            alert(s)
+        });
+</script>
+                </code>
+            </pre>
+        </section>
+        <section>
+            <h3>wasmer</h3>
+            <p>Run any code on any client.</p>
+            <pre>curl https://get.wasmer.io -sSfL | sh</pre>
+
+            <pre>wasmer hello_wasm_bg.wasm --invoke add 1 2</pre>
+        </section>
+        <section>
+            <h3>Run .wasm on Python with wasmer</h3>
+            <p> ~ pip install wasmer wasmer_compiler_cranelift</p>
+            <pre>
+                <code>
+from wasmer import engine, Store, Module, Instance
+from wasmer_compiler_cranelift import Compiler
+
+store = Store(engine.JIT(Compiler))
+
+module = Module(store, open('pkg/hello_wasm_bg.wasm', 'rb').read())
+instance = Instance(module)
+
+result = instance.exports.add(5, 30)
+
+print(result)
+                </code>
+            </pre>
+        </section>
+        <section>
+            <h4>Something worth looking into..</h4>
+            <ul>
+                <li>pyodide <a href="https://pyodide.org/en/stable/">https://pyodide.org/en/stable/</a> </li>
+                <li><a href="https://github.com/wasmerio/wasmer-nginx-example">https://github.com/wasmerio/wasmer-nginx-example</a> </li>
+            </ul>
+        </section>
+
+        <section>
+            Disable wasm on chrome (MacOS)</br>
+            open /Applications/Google\ Chrome.app --args --js-flags=--noexpose_wasm
+
+        </section>
+
+        <section>
+            Any Questions <i class="fa fa-question"></i>
+        </section>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/lib/js/head.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/js/reveal.min.js"></script>
+<script>
+    // Full list of configuration options available here:
+    // https://github.com/hakimel/reveal.js#configuration
+    Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+
+        theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+        transition: 'linear', // default/cube/page/concave/zoom/linear/fade/none
+
+        // Parallax scrolling
+        // parallaxBackgroundImage: 'background.png',
+        // parallaxBackgroundSize: '2100px 900px',
+
+        // Optional libraries used to extend on reveal.js
+        dependencies: [{
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/lib/js/classList.js',
+            condition: function () {
+                return !document.body.classList;
+            }
+        }, {
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/plugin/markdown/marked.js',
+            condition: function () {
+                return !!document.querySelector('[data-markdown]');
+            }
+        }, {
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/plugin/markdown/markdown.min.js',
+            condition: function () {
+                return !!document.querySelector('[data-markdown]');
+            }
+        }, {
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/plugin/highlight/highlight.min.js',
+            async: true,
+            callback: function () {
+                hljs.initHighlightingOnLoad();
+            }
+        }, {
+            src: 'https://cdnjs.cloudflare.com/ajax/libs/reveal.js/3.6.0/plugin/zoom-js/zoom.min.js',
+            async: true,
+            condition: function () {
+                return !!document.body.classList;
+            }
+        }]
+    });
+</script>
+</body>
+</html>
